@@ -99,7 +99,10 @@
       cursorBlink: true,
       fontSize: 14,
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-      scrollback: 5000,
+      scrollback: 0,
+      scrollOnUserInput: false,
+      smoothScrollDuration: 0,
+      allowTransparency: false,
       theme: {
         background: '#0a0a0a',
         foreground: '#e5e5e5',
@@ -133,7 +136,6 @@
 
     const container = document.getElementById('terminal-container');
     term.open(container);
-    requestAnimationFrame(() => fitAddon.fit());
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${location.host}/tui/ws`;
@@ -206,7 +208,7 @@
     let resizeTimeout;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => fitAddon.fit(), 100);
+      resizeTimeout = setTimeout(() => fitAddon.fit(), 200);
     });
 
     connect();
