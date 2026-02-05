@@ -8,6 +8,9 @@ RUN apt-get update \
     procps \
     python3 \
     build-essential \
+    vim \
+    nano \
+  && curl -fsSL https://tailscale.com/install.sh | sh \
   && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g openclaw@latest
@@ -31,4 +34,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD curl -f http://localhost:8080/setup/healthz || exit 1
 
 USER openclaw
-CMD ["node", "src/server.js"]
+COPY start.sh /app/start.sh
+CMD ["/bin/bash", "/app/start.sh"]
