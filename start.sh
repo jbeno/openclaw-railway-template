@@ -95,13 +95,10 @@ chown -R openclaw:openclaw /data
     if curl -s -f "http://127.0.0.1:18789/openclaw" > /dev/null 2>&1; then
       echo "[startup] OpenClaw is ready, sending post-restart wake event..."
       
-      curl -s -X POST "http://127.0.0.1:18789/cron/wake" \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer ${OPENCLAW_GATEWAY_TOKEN:-$(cat /data/.openclaw/gateway.token 2>/dev/null)}" \
-        -d '{
-          "text": "Container restarted successfully. All services online. Verify deployment, check system state, and continue any pending work.",
-          "mode": "now"
-        }' && echo "[startup] Wake event sent successfully" || echo "[startup] Wake event request failed"
+      # Use OpenClaw CLI to send wake event (as openclaw user)
+      su - openclaw -c "openclaw cron wake --text 'Container restarted successfully. All services online. Verify deployment, check system state, and continue any pending work.' --mode now" \
+        && echo "[startup] Wake event sent successfully" \
+        || echo "[startup] Wake event request failed"
       
       break
     else
