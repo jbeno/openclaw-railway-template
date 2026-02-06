@@ -81,37 +81,39 @@ fi
 mkdir -p /data/.openclaw
 chown -R openclaw:openclaw /data
 
-# Schedule post-restart heartbeat (run in background)
-# This will trigger a wake event after OpenClaw initializes
+# Schedule post-restart notification (run in background)
+# Wait for gateway to be ready, then send a system event to wake the agent
 (
-  # Wait for OpenClaw to be ready (with retries)
-  MAX_RETRIES=12
+  MAX_RETRIES=24
   RETRY_DELAY=5
-  
+
   for i in $(seq 1 $MAX_RETRIES); do
     sleep $RETRY_DELAY
-    
-    # Check if OpenClaw is responding
+
+    # Check if gateway is responding
     if curl -s -f "http://127.0.0.1:18789/openclaw" > /dev/null 2>&1; then
-      echo "[startup] OpenClaw is ready, sending post-restart wake event..."
-      
-      # Use OpenClaw CLI to send wake event (as openclaw user)
-      su - openclaw -c "openclaw cron wake --text 'Container restarted successfully. All services online. Verify deployment, check system state, and continue any pending work.' --mode now" \
-        && echo "[startup] Wake event sent successfully" \
-        || echo "[startup] Wake event request failed"
-      
+      echo "[heartbeat] Gateway is ready, sending restart system event..."
+
+      # Send an immediate system event (no cron job needed)
+      su -s /bin/bash openclaw -c "
+        export OPENCLAW_STATE_DIR=/data/.openclaw
+        export OPENCLAW_WORKSPACE_DIR=/data/.openclaw/workspace
+        openclaw system event --mode now --text 'Container restarted. All services online. Check system state and continue any pending work.'
+      " && echo "[heartbeat] Restart system event sent" \
+        || echo "[heartbeat] WARNING: Failed to send restart system event"
+
       break
     else
-      echo "[startup] Waiting for OpenClaw to be ready (attempt $i/$MAX_RETRIES)..."
+      echo "[heartbeat] Waiting for gateway (attempt $i/$MAX_RETRIES)..."
     fi
   done
-  
-  if [ $i -eq $MAX_RETRIES ]; then
-    echo "[startup] WARNING: OpenClaw did not become ready after ${MAX_RETRIES} attempts"
+
+  if [ "$i" -eq "$MAX_RETRIES" ]; then
+    echo "[heartbeat] WARNING: Gateway did not become ready after ${MAX_RETRIES} attempts"
   fi
 ) &
 
-echo "[startup] Post-restart heartbeat scheduled (15s delay)"
+echo "[startup] Post-restart notification scheduled in background"
 
 # Start the wrapper server as openclaw user
 echo "[startup] Starting OpenClaw wrapper server as openclaw user..."
