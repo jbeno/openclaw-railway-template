@@ -37,6 +37,10 @@ else
   echo "[startup] No Tailscale auth key provided, skipping Tailscale setup"
 fi
 
+# Ensure data directories are owned by openclaw user
+mkdir -p /data/.openclaw
+chown -R openclaw:openclaw /data
+
 # Start the wrapper server as openclaw user
 echo "[startup] Starting OpenClaw wrapper server as openclaw user..."
 exec su -s /bin/bash openclaw -c "cd /app && node src/server.js"
