@@ -3,6 +3,42 @@ set -e
 
 echo "[startup] OpenClaw Railway starting..."
 
+# Auto-configure SSH credentials from persistent volume
+if [ -d "/data/.credentials/ssh" ]; then
+  echo "[startup] Configuring SSH credentials..."
+  
+  # Set up SSH for openclaw user
+  mkdir -p /home/openclaw/.ssh
+  chmod 700 /home/openclaw/.ssh
+  
+  # Copy all SSH credentials from persistent volume
+  cp -r /data/.credentials/ssh/* /home/openclaw/.ssh/
+  
+  # Set correct permissions
+  chmod 600 /home/openclaw/.ssh/*
+  chmod 644 /home/openclaw/.ssh/*.pub 2>/dev/null || true
+  
+  # Ensure openclaw owns everything
+  chown -R openclaw:openclaw /home/openclaw/.ssh
+  
+  echo "[startup] SSH credentials configured"
+  
+  # Add known hosts
+  su - openclaw -c "ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null || true"
+fi
+
+# Configure git for openclaw user if credentials exist
+if [ -f "/data/.credentials/email.json" ]; then
+  # Extract email from credentials (generic approach)
+  GIT_EMAIL=$(grep -o '"email"[[:space:]]*:[[:space:]]*"[^"]*"' /data/.credentials/email.json | cut -d'"' -f4)
+  if [ -n "$GIT_EMAIL" ]; then
+    echo "[startup] Configuring git..."
+    su - openclaw -c "git config --global user.email '$GIT_EMAIL'"
+    su - openclaw -c "git config --global user.name 'Hachi'"
+    echo "[startup] Git configured"
+  fi
+fi
+
 # Join Tailscale network if auth key is provided
 # NOTE: This must run as root, then we'll switch to openclaw user for the app
 if [ -n "$TAILSCALE_AUTH_KEY" ]; then
