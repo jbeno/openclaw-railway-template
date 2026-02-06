@@ -32,7 +32,7 @@ if [ -n "$TAILSCALE_AUTH_KEY" ]; then
     
     # Expose the app via Tailscale HTTPS (accessible only from tailnet)
     echo "[startup] Enabling Tailscale serve on port 8080..."
-    tailscale serve --bg 8080
+    tailscale serve --bg 8080 || echo "[startup] WARNING: tailscale serve failed, app may only be accessible locally"
   else
     echo "[startup] ERROR: Failed to connect to Tailscale"
     kill $TAILSCALED_PID 2>/dev/null || true
