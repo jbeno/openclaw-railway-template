@@ -29,6 +29,10 @@ if [ -n "$TAILSCALE_AUTH_KEY" ]; then
   if [ $? -eq 0 ]; then
     echo "[startup] Tailscale connected successfully"
     tailscale status
+    
+    # Expose the app via Tailscale HTTPS (accessible only from tailnet)
+    echo "[startup] Enabling Tailscale serve on port 8080..."
+    tailscale serve --bg 8080
   else
     echo "[startup] ERROR: Failed to connect to Tailscale"
     kill $TAILSCALED_PID 2>/dev/null || true
