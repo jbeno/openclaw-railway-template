@@ -81,6 +81,23 @@ fi
 mkdir -p /data/.openclaw
 chown -R openclaw:openclaw /data
 
+# Schedule post-restart heartbeat (run in background)
+# This will trigger a wake event after OpenClaw initializes
+(
+  sleep 15  # Wait for OpenClaw to fully initialize
+  
+  echo "[startup] Sending post-restart wake event..."
+  curl -s -X POST "http://127.0.0.1:18789/cron/wake" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${OPENCLAW_GATEWAY_TOKEN:-$(cat /data/.openclaw/gateway.token 2>/dev/null)}" \
+    -d '{
+      "text": "Container restarted successfully. All services online. Verify deployment, check system state, and continue any pending work.",
+      "mode": "now"
+    }' && echo "[startup] Wake event sent successfully" || echo "[startup] Failed to send wake event (OpenClaw may not be ready yet)"
+) &
+
+echo "[startup] Post-restart heartbeat scheduled (15s delay)"
+
 # Start the wrapper server as openclaw user
 echo "[startup] Starting OpenClaw wrapper server as openclaw user..."
 exec su -s /bin/bash openclaw -c "cd /app && node src/server.js"
