@@ -13,8 +13,9 @@ if [ -n "$TAILSCALE_AUTH_KEY" ]; then
   chown openclaw:openclaw /data/tailscale
   
   # Start tailscaled as root (required)
-  echo "[startup] Starting tailscaled daemon..."
-  tailscaled --state=/data/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock &
+  # Use userspace networking since Railway containers lack /dev/net/tun
+  echo "[startup] Starting tailscaled daemon (userspace networking mode)..."
+  tailscaled --state=/data/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock --tun=userspace-networking &
   TAILSCALED_PID=$!
   
   # Wait for tailscaled to be ready
