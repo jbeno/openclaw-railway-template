@@ -13,6 +13,10 @@ RUN apt-get update \
   && curl -fsSL https://tailscale.com/install.sh | sh \
   && rm -rf /var/lib/apt/lists/*
 
+# Configure git to use HTTPS instead of SSH for GitHub dependencies
+RUN git config --global url."https://github.com/".insteadOf git@github.com: \
+  && git config --global url."https://".insteadOf ssh://
+
 RUN npm install -g openclaw@latest
 
 WORKDIR /app
