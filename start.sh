@@ -39,6 +39,25 @@ if [ -f "/data/.credentials/email.json" ]; then
   fi
 fi
 
+# Set up Moltbook credential symlinks if credentials exist
+if [ -f "/data/.credentials/moltbook.json" ]; then
+  echo "[startup] Setting up Moltbook credential symlinks..."
+  
+  # Create config directories
+  mkdir -p /home/openclaw/.config/moltbook
+  mkdir -p /data/.config/moltbook
+  
+  # Create symlink chain: ~/.config/moltbook/credentials.json → /data/.config/moltbook/credentials.json → /data/.credentials/moltbook.json
+  ln -sf /data/.credentials/moltbook.json /data/.config/moltbook/credentials.json
+  ln -sf /data/.config/moltbook/credentials.json /home/openclaw/.config/moltbook/credentials.json
+  
+  # Ensure openclaw owns the config directories
+  chown -R openclaw:openclaw /home/openclaw/.config
+  chown -R openclaw:openclaw /data/.config
+  
+  echo "[startup] Moltbook credentials configured"
+fi
+
 # Join Tailscale network if auth key is provided
 # NOTE: This must run as root, then we'll switch to openclaw user for the app
 if [ -n "$TAILSCALE_AUTH_KEY" ]; then
